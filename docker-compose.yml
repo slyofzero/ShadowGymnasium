@@ -1,0 +1,13 @@
+services:
+  sf2-harness:
+    build: .
+    image: sf2-harness:latest
+    environment:
+      - ANDROID_SERIAL=${ANDROID_SERIAL:-host.docker.internal:5555}
+      - ADB_PATH=${ADB_PATH:-/usr/bin/adb}
+      - ADB_CONNECT=${ADB_CONNECT:-host.docker.internal:5555}
+      - FRIDA_HOST=${FRIDA_HOST:-host.docker.internal}
+      - FRIDA_PORT=${FRIDA_PORT:-27042}
+      - FRIDA_DIRECT=${FRIDA_DIRECT:-0}
+    stdin_open: true
+    tty: true
