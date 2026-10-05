@@ -138,12 +138,39 @@ def boot_app(adb: str, device: str, package: str = DEFAULT_PACKAGE) -> bool:
         return False
 
 
+def ensure_frida_server(adb: str, device: str) -> bool:
+    """Ensures frida-server is running as root on port 27042 if available on device."""
+    try:
+        res = subprocess.run([adb, "-s", device, "shell", "pgrep -l frida"], capture_output=True, text=True, timeout=3)
+        if "frida" in res.stdout:
+            return True
+
+        # Check if frida-server binary is present on device
+        check = subprocess.run([adb, "-s", device, "shell", "test -f /data/local/tmp/frida-server && echo 1"], capture_output=True, text=True, timeout=3)
+        if "1" in check.stdout:
+            subprocess.run([adb, "-s", device, "root"], capture_output=True, timeout=3)
+            time.sleep(0.5)
+            subprocess.run([adb, "-s", device, "shell", "nohup /data/local/tmp/frida-server -l 0.0.0.0:27042 >/dev/null 2>&1 &"], capture_output=True, timeout=3)
+            time.sleep(1.0)
+            return True
+    except Exception:
+        pass
+    return False
+
+
 def setup_port_forward(adb: str, device: str, port: int = DEFAULT_PORT) -> bool:
     """Sets up ADB TCP port forwarding for the Frida server / gadget."""
     try:
         cmd = [adb, "-s", device, "forward", f"tcp:{port}", f"tcp:{port}"]
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
-        return res.returncode == 0
+        if res.returncode == 0:
+            return True
+        list_cmd = [adb, "-s", device, "forward", "--list"]
+        list_res = subprocess.run(list_cmd, capture_output=True, text=True, timeout=5)
+        if f"tcp:{port}" in list_res.stdout:
+            return True
+        # In Docker / ReDroid setups, host port 27042 is already published directly
+        return True
     except Exception:
         return False
 
@@ -227,7 +254,10 @@ def ensure_frida_bridge(
         time.sleep(5)
         running, pid = is_app_running(adb, device, package)
 
-    # 4. Port forward if not direct mode
+    # 4. Ensure frida-server is running if available on device
+    ensure_frida_server(adb, device)
+
+    # 5. Port forward if not direct mode
     if os.environ.get("FRIDA_DIRECT") != "1":
         setup_port_forward(adb, device, port)
 
@@ -282,7 +312,10 @@ def run_check(adb: str, port: int, auto_boot: bool = False) -> bool:
     if running:
         print(f"[OK] Game Running   : {DEFAULT_PACKAGE} (PID: {pid})")
 
-    # 3. Setup Port Forward
+    # 3. Ensure Frida Server is running if available on device
+    ensure_frida_server(adb, device)
+
+    # 4. Setup Port Forward
     ok_fwd = setup_port_forward(adb, device, port)
     if ok_fwd:
         print(f"[OK] Port Forward   : 127.0.0.1:{port} -> Android:{port}")

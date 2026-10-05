@@ -68,8 +68,8 @@ HARNESS_JS_PATH = os.path.join(SCRIPT_DIR, "frida", "engine_harness.js")
 
 
 def load_harness_script() -> str:
-    with open(HARNESS_JS_PATH, encoding="utf-8") as f:
-        return f.read()
+    from scripts.common import load_frida_script
+    return load_frida_script("engine_harness.js")
 
 
 class SF2EngineController:
@@ -90,9 +90,10 @@ class SF2EngineController:
 
         print(f"Connecting to Frida Gadget on {self.host}:{self.port}...")
         try:
+            from scripts.common import attach_to_game
             device_manager = frida.get_device_manager()  # type: ignore[attr-defined]
             device = device_manager.add_remote_device(f"{self.host}:{self.port}")
-            self.session = device.attach("Gadget")
+            self.session = attach_to_game(device)
             self.script = self.session.create_script(load_harness_script())
             self.script.on("message", self._on_message)
             self.script.load()

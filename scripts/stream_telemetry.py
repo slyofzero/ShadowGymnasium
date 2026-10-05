@@ -81,8 +81,8 @@ TELEMETRY_JS_PATH = os.path.join(SCRIPT_DIR, "frida", "telemetry_streamer.js")
 
 
 def load_telemetry_script() -> str:
-    with open(TELEMETRY_JS_PATH, encoding="utf-8") as f:
-        return f.read()
+    from scripts.common import load_frida_script
+    return load_frida_script("telemetry_streamer.js")
 
 
 class SF2TelemetryStreamer:
@@ -135,9 +135,10 @@ class SF2TelemetryStreamer:
         js_code = load_telemetry_script()
 
         try:
+            from scripts.common import attach_to_game
             device_manager = frida.get_device_manager()  # type: ignore[attr-defined]
             device = device_manager.add_remote_device(f"{self.host}:{self.port}")
-            self.session = device.attach("Gadget")
+            self.session = attach_to_game(device)
             self.script = self.session.create_script(js_code)
             self.script.on("message", self._on_message)
             self.script.load()

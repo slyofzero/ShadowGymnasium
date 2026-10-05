@@ -134,16 +134,13 @@ class SF2TickController:
 
         ensure_frida_port_forward(self.port)
 
-        if not os.path.exists(HOOK_JS_PATH):
-            raise FileNotFoundError(f"Hook script not found at {HOOK_JS_PATH}")
-
-        with open(HOOK_JS_PATH, encoding="utf-8") as f:
-            js_code = f.read()
+        from scripts.common import attach_to_game, load_frida_script
+        js_code = load_frida_script("tick_controller.js")
 
         try:
             device_manager = frida.get_device_manager()  # type: ignore[attr-defined]
             device = device_manager.add_remote_device(f"{self.host}:{self.port}")
-            self.session = device.attach("Gadget")
+            self.session = attach_to_game(device)
             self.script = self.session.create_script(js_code)
             self.script.on("message", self._on_message)
             self.script.load()

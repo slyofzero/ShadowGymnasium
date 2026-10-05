@@ -6,14 +6,7 @@
  * Zero ADB / screen taps required. Fully headless compatible.
  */
 
-var ranges = Process.enumerateRanges('r-x');
-var il2cppBase = null;
-for (var i = 0; i < ranges.length; i++) {
-    if (ranges[i].file && ranges[i].file.path.indexOf('libil2cpp.so') !== -1) {
-        il2cppBase = ranges[i].base.sub(0x18b6000);
-        break;
-    }
-}
+
 
 if (!il2cppBase) {
     send({ error: "Could not locate libil2cpp.so base in memory" });
