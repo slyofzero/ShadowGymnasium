@@ -25,9 +25,7 @@
 ## 🎬 In-Action Demonstration
 
 <p align="center">
-  <video src="./assets/demo.mp4" controls width="88%" poster="./modding/assets/icons/cat_blasters_icon_512.png">
-    <p><i>To play this demonstration, download or view <a href="./assets/demo.mp4"><code>./assets/demo.mp4</code></a> or record a live session using the automated harness.</i></p>
-  </video>
+  <img src="./assets/demo.gif" width="92%" alt="Shadow Fight 2 Autonomous In-Engine Demonstration" />
 </p>
 <p align="center"><i>Demonstrating direct native IL2CPP action injection, zero-latency physics stepping, and live telemetry extraction.</i></p>
 
