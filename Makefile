@@ -16,7 +16,7 @@ ifeq ($(wildcard $(PYTHON)),)
     PYTHON := python
 endif
 
-.PHONY: all install boot reinstall restart screenshot status help
+.PHONY: all install boot reinstall restart screenshot status help frida frida-watch actions telemetry engine tick
 
 # Default target: check/install and boot
 all: install boot
@@ -53,6 +53,22 @@ frida:
 frida-watch:
 	@$(PYTHON) scripts/start_frida_service.py --watch
 
+## actions: Execute in-engine game actions (make actions ACTION=status)
+actions:
+	@$(PYTHON) scripts/game_actions.py $(ACTION)
+
+## telemetry: Stream live JSON telemetry
+telemetry:
+	@$(PYTHON) scripts/stream_telemetry.py
+
+## engine: Launch combat engine controller
+engine:
+	@$(PYTHON) scripts/engine_controller.py
+
+## tick: Master simulation timing controller (make tick CMD=status)
+tick:
+	@$(PYTHON) scripts/tick_controller.py $(CMD)
+
 ## help: Display this help message
 help:
 	@echo "Shadow Fight 2 Automation Makefile"
@@ -62,4 +78,8 @@ help:
 	@echo "  make frida-watch - Run continuous Frida connection watchdog daemon"
 	@echo "  make screenshot  - Instant sub-second screen capture to artifacts"
 	@echo "  make status      - Check device, installation, and running status"
+	@echo "  make actions     - In-engine combat flow (e.g. make actions ACTION=status)"
+	@echo "  make telemetry   - Live 60Hz JSON state streamer"
+	@echo "  make engine      - Interactive combat action controller"
+	@echo "  make tick        - Simulation timing controller (e.g. make tick CMD=status)"
 

@@ -45,7 +45,38 @@ import subprocess
 import sys
 import threading
 import time
+from pathlib import Path
 from typing import Any
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+
+def _ensure_environment() -> None:
+    """Ensure running with appropriate Python environment containing real frida."""
+    try:
+        import frida
+
+        if not hasattr(frida, "get_device_manager"):
+            raise ImportError("Imported namespace package instead of frida library")
+    except ImportError:
+        venv_py = (
+            REPO_ROOT / ".venv" / "Scripts" / "python.exe"
+            if sys.platform == "win32"
+            else REPO_ROOT / ".venv" / "bin" / "python"
+        )
+        if venv_py.exists() and Path(sys.executable).resolve() != venv_py.resolve():
+            sys.exit(subprocess.call([str(venv_py)] + sys.argv))
+        else:
+            print("[ERROR] Required package 'frida' is not installed in this Python environment.")
+            print(f"[TIP] Activate the virtual environment:\n  .venv\\Scripts\\activate\nOr run directly with:\n  .venv\\Scripts\\python {sys.argv[0]}")
+            sys.exit(1)
+
+
+_ensure_environment()
+
+import frida
 
 try:
     from dotenv import load_dotenv
@@ -53,11 +84,6 @@ try:
     load_dotenv()
 except ImportError:
     pass
-
-try:
-    import frida
-except ImportError:
-    frida = None
 
 
 def get_frida_endpoint() -> tuple[str, int]:
@@ -134,7 +160,10 @@ class SF2TickController:
 
         ensure_frida_port_forward(self.port)
 
-        from scripts.common import attach_to_game, load_frida_script
+        try:
+            from scripts.common import attach_to_game, load_frida_script
+        except ImportError:
+            from common import attach_to_game, load_frida_script
         js_code = load_frida_script("tick_controller.js")
 
         try:
